@@ -10,6 +10,11 @@ const argv = require('yargs')
       demandOption: true,
       describe: 'parameters for the miner',
       type: 'string'
+    }, 'c': {
+      alias: 'coin',
+      demandOption: true,
+      describe: 'coin to mine',
+      type: 'string'
     }, 't': {
       alias: 'token',
       demandOption: false,
