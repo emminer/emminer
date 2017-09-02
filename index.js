@@ -35,4 +35,8 @@ const argv = require('yargs')
   })
   .argv;
 
-console.dir(argv);
+const ethminer = new (require('./emitters/ethminer'))({
+  miner: argv.miner,
+  params: argv.params,
+});
+ethminer.start();
