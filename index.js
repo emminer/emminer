@@ -66,12 +66,10 @@ gpu((err, list) => {
 
   ethminer.on('error', () => {
     ethminer.kill();
+    process.exit(1);
   });
   ethminer.on('exit', () => {
-    if (reportTimeout) {
-      clearTimeout(reportTimeout);
-      reportTimeout = null;
-    }
+    process.exit(1);
   });
   ethminer.on('share', (share) => {
     if (reportTimeout) {
