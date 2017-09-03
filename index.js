@@ -39,4 +39,12 @@ const ethminer = new (require('./emitters/ethminer'))({
   miner: argv.miner,
   params: argv.params,
 });
+function log2console(eventName, data) {
+  console.log(`+++++++++++++++++++++++++++${eventName}+++++++++++++++++++`);
+  console.dir(data);
+  console.log(`---------------------------${eventName}--------------------`);
+}
+ethminer.on('share', log2console.bind(null, 'share'));
+ethminer.on('hashrate', log2console.bind(null, 'hashrate'));
+ethminer.on('authorized', log2console.bind(null, 'authorized'));
 ethminer.start();
