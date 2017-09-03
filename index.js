@@ -1,3 +1,8 @@
+const request = require('./request');
+const log = require('./logging');
+const gpu = require('./gpu');
+const regular_report_interval = 10;
+
 const argv = require('yargs')
   .options({
     'm': {
@@ -20,6 +25,11 @@ const argv = require('yargs')
       demandOption: false,
       describe: 'token',
       type: 'string'
+    }, 'w': {
+      alias: 'worker',
+      demandOption: true,
+      describe: 'worker name',
+      type: 'string',
     }, 'd': {
       alias: 'host',
       demandOption: false,
@@ -34,19 +44,92 @@ const argv = require('yargs')
     }
   })
   .argv;
+const TOKEN = argv.token;
+const WORKER = argv.worker;
+let eventApiEndpoint = `http://${argv.host}/api/events`;
+let reportTimeout;
+log.info(`worker: ${argv.worker}`);
+log.info('nvidia-smi:');
+gpu((err, list) => {
+  if (err) {
+    log.error(err);
+    return;
+  }
 
-const ethminer = new (require('./emitters/ethminer'))({
-  miner: argv.miner,
-  params: argv.params,
+  log.info(list.map(gpu => (gpu.index + ' ' + gpu.name)).join('\n'));
+  startGPUReportor();
+
+  const ethminer = new (require('./emitters/ethminer'))({
+    miner: argv.miner,
+    params: argv.params,
+  });
+
+  ethminer.on('error', () => {
+    ethminer.kill();
+  });
+  ethminer.on('share', (share) => {
+    if (reportTimeout) {
+      clearTimeout(reportTimeout);
+      reportTimeout = null;
+    }
+
+    const sharePciBusId = share.gpus[share.share.cuda].pciBusId;
+    gpu((err1, list1) => {
+      if (err1) {
+        log.error(err1);
+        return;
+      }
+
+      for (let gpu of list1) {
+        if (gpu.pciBusId === sharePciBusId) {
+          share.share.gpu = gpu.index;
+        }
+        let gpuInMiner = share.gpus.filter(g => g.pciBusId === gpu.pciBusId)[0];
+        gpu.hashrate = gpuInMiner.hashrate;
+      }
+
+      //report
+      let reportObj = {
+        gpus: list1,
+        share: share.share,
+        hashrate: share.hashrate,
+      };
+      request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, (err, result) => {
+        log.error(err);
+        log.info(result);
+        startGPUReportor();
+      });
+    });
+  });
+  //ethminer.on('hashrate', log2console.bind(null, 'hashrate'));
+  // ethminer.on('authorized', log2console.bind(null, 'authorized'));
+  // ethminer.on('new_job', log2console.bind(null, 'new_job'));
+  // ethminer.on('work_timeout', log2console.bind(null, 'work_timeout'));
+  ethminer.start();
+  process.on('exit', () => {
+    log.info('exiting, kill the miner.');
+    ethminer.kill();
+  });
 });
-function log2console(eventName, data) {
-  console.log(`+++++++++++++++++++++++++++${eventName}+++++++++++++++++++`);
-  console.dir(data);
-  console.log(`---------------------------${eventName}--------------------`);
+
+function startGPUReportor() {
+  reportTimeout = setTimeout(readGPUandReport, regular_report_interval * 1000);
 }
-ethminer.on('share', log2console.bind(null, 'share'));
-ethminer.on('hashrate', log2console.bind(null, 'hashrate'));
-ethminer.on('authorized', log2console.bind(null, 'authorized'));
-ethminer.on('new_job', log2console.bind(null, 'new_job'));
-ethminer.on('work_timeout', log2console.bind(null, 'work_timeout'));
-ethminer.start();
+
+function readGPUandReport() {
+  gpu((err, list) => {
+    if (err) {
+      log.error(err);
+      return;
+    }
+
+    log.info('reporting.......');
+    const payload = {action: 'regular', payload: list};
+    log.info(payload);
+    request.post(eventApiEndpoint, TOKEN, WORKER, payload, (err, result) => {
+      log.error(err);
+      log.info(result);
+      startGPUReportor();
+    });
+  });
+}

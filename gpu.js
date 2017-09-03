@@ -10,7 +10,7 @@ function parseBusId(raw) {
 function parseLine(data) {
   const arr = data.split(',');
   return {
-    index: arr[0],
+    index: +(arr[0]),
     pciBusId: parseBusId(arr[1]),
     name: arr[2].trim(),
     pstate: arr[3].trim(),
