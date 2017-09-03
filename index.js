@@ -94,9 +94,7 @@ gpu((err, list) => {
         share: share.share,
         hashrate: share.hashrate,
       };
-      request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, (err, result) => {
-        log.error(err);
-        log.info(result);
+      request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, () => {
         startGPUReportor();
       });
     });
@@ -125,10 +123,7 @@ function readGPUandReport() {
 
     log.info('reporting.......');
     const payload = {action: 'regular', payload: list};
-    log.info(payload);
-    request.post(eventApiEndpoint, TOKEN, WORKER, payload, (err, result) => {
-      log.error(err);
-      log.info(result);
+    request.post(eventApiEndpoint, TOKEN, WORKER, payload, () => {
       startGPUReportor();
     });
   });

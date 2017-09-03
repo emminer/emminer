@@ -45,6 +45,7 @@ class EthminerMonitor extends EventEmitter {
 
     log.info(`${this.miner} ${this.params}`);
     const miner = spawn(this.miner, this.params.split(' '));
+    this.miner = miner;
     miner.stdout.on('data', data => {
       log.info(`${data}`.replace(/\n$/, ''));
     });
@@ -118,6 +119,12 @@ class EthminerMonitor extends EventEmitter {
       let share = this.share;
       this.share = null;
       this.emit('share', {share, hashrate: this.hashrate, gpus: this.GPUArr});
+    }
+  }
+
+  kill() {
+    if (this.miner) {
+      this.miner.kill();
     }
   }
 }
