@@ -14,6 +14,7 @@
   "author": "bob yuan",
   "license": "GPL-3.0",
   "dependencies": {
+    "strip-ansi": "^4.0.0",
     "yargs": "^8.0.2"
   },
   "devDependencies": {
