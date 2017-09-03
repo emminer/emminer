@@ -47,4 +47,6 @@ function log2console(eventName, data) {
 ethminer.on('share', log2console.bind(null, 'share'));
 ethminer.on('hashrate', log2console.bind(null, 'hashrate'));
 ethminer.on('authorized', log2console.bind(null, 'authorized'));
+ethminer.on('new_job', log2console.bind(null, 'new_job'));
+ethminer.on('work_timeout', log2console.bind(null, 'work_timeout'));
 ethminer.start();

@@ -8,6 +8,8 @@ events:
   share
   hashrate
   authorized
+  new_job
+  work_timeout
 */
 class EthminerMonitor extends EventEmitter {
   constructor(opts) {
@@ -104,12 +106,18 @@ class EthminerMonitor extends EventEmitter {
     } else if ((match = data.match(/Authorized worker ([\w.]+)/)) != null) {
       this.worker = match[1];
       this.emit('authorized', {worker: this.worker});
+    } else if (data.indexOf('Received new job #') >= 0) {
+      this.emit('new_job');
+    } else if (data.indexOf('No new work received in') >= 0) {
+      this.emit('work_timeout', {msg: data});
+    } else if (data.indexOf('CUDA error in') >= 0) {
+      this.emit('error', new Error(data));
     }
 
     if (this.share && this.share.status) {
       let share = this.share;
       this.share = null;
-      this.emit('share', {share, gpus: this.GPUArr});
+      this.emit('share', {share, hashrate: this.hashrate, gpus: this.GPUArr});
     }
   }
 }
