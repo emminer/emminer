@@ -67,6 +67,12 @@ gpu((err, list) => {
   ethminer.on('error', () => {
     ethminer.kill();
   });
+  ethminer.on('exit', () => {
+    if (reportTimeout) {
+      clearTimeout(reportTimeout);
+      reportTimeout = null;
+    }
+  });
   ethminer.on('share', (share) => {
     if (reportTimeout) {
       clearTimeout(reportTimeout);

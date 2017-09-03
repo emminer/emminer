@@ -57,10 +57,12 @@ class EthminerMonitor extends EventEmitter {
     miner.on('error', err => {
       log.error('error occurred.');
       log.error(err);
+      this.emit('error', err);
     });
     miner.on('exit', (code, signal) => {
       log.info(`exit code: ${code}`);
       log.info(`exit signal: ${signal}`);
+      this.emit('exit');
     });
   }
 
