@@ -112,7 +112,9 @@ gpu((err, list) => {
 });
 
 function startGPUReportor() {
-  reportTimeout = setTimeout(readGPUandReport, regular_report_interval * 1000);
+  if (!reportTimeout) {
+    reportTimeout = setTimeout(readGPUandReport, regular_report_interval * 1000);
+  }
 }
 
 function readGPUandReport() {
