@@ -4,7 +4,7 @@ const query = 'index,gpu_bus_id,name,pstate,power.limit,power.draw,'
 + 'temperature.gpu,fan.speed,clocks.gr,clocks.mem,utilization.gpu';
 
 function parseBusId(raw) {
-  return +(raw.match(/^[^:]+:(\d+):/)[1]);
+  return parseInt(raw.match(/^[^:]+:([\dABCDEF]+):/)[1], 16);
 }
 
 function parseLine(data) {
