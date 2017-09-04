@@ -118,6 +118,10 @@ function startGPUReportor() {
 }
 
 function readGPUandReport() {
+  if (reportTimeout) {
+    clearTimeout(reportTimeout);
+    reportTimeout = null;
+  }
   gpu((err, list) => {
     if (err) {
       log.error(err);
