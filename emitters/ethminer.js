@@ -17,32 +17,10 @@ class EthminerMonitor extends EventEmitter {
     this.miner = opts.miner;
     this.params = opts.params;
     this.hashrate = 0;
+    this.GPUArr = [];
   }
 
   start() {
-    log.info(`calling ${this.miner} -U --list-devices to correct the GPU orders.`);
-    const devicesResult = spawnSync(this.miner, ['-U', '--list-devices'], {encoding: 'utf8'});
-    if (devicesResult.error) {
-      this.emit('error', devicesResult.error);
-      return;
-    }
-
-    const lines = devicesResult.stderr.split('\n');
-    let newGPU = false;
-    let GPUArr = [];
-    for(const line of lines) {
-      if (line.startsWith('[')) {
-        newGPU = true;
-      } else if (newGPU) {
-        const pciBusId = line.substring(line.indexOf(':') + 1);
-        GPUArr.push(+pciBusId);
-        newGPU = false;
-      }
-    }
-
-    this.GPUArr = GPUArr.map(g => ({pciBusId: g}));
-    this.emit('id2pciBusId', this.GPUArr);
-
     log.info(`${this.miner} ${this.params}`);
     const miner = spawn(this.miner, this.params.split(' '));
     this.miner = miner;
@@ -71,7 +49,8 @@ class EthminerMonitor extends EventEmitter {
     if ((match = data.match(/CUDA(\d+)\s*Solution found; Submitting/)) != null) {
       let cuda = match[1];
       this.share = {
-        cuda: +cuda
+        cuda: +cuda,
+        gpu: +cuda,
       };
     } else if (data.indexOf('Submitting stale solution') >= 0) {
       if (this.share) {
@@ -98,13 +77,19 @@ class EthminerMonitor extends EventEmitter {
       while((individualMatch = individualReg.exec(data)) != null) {
         individualHashrates.push(+(individualMatch[2]));
       }
-      if (individualHashrates.length !== this.GPUArr.length) {
-        this.emit('error', new Error(`gpu lost, expected: ${this.GPUArr.length}, actual: ${individualHashrates.length}`));
-        return;
+
+      if (this.GPUArr.length) {
+        if (individualHashrates.length !== this.GPUArr.length) {
+          this.emit('error', new Error(`gpu lost, expected: ${this.GPUArr.length}, actual: ${individualHashrates.length}`));
+          return;
+        }
+        for(let i = 0; i< individualHashrates.length; i++) {
+          this.GPUArr[i].hashrate = individualHashrates[i];
+        }
+      } else {
+        this.GPUArr = individualHashrates.map(hashrate => ({ hashrate }));
       }
-      for(let i = 0; i< individualHashrates.length; i++) {
-        this.GPUArr[i].hashrate = individualHashrates[i];
-      }
+
       this.emit('hashrate', {total: this.hashrate, gpus: this.GPUArr});
     } else if ((match = data.match(/Authorized worker ([\w.]+)/)) != null) {
       this.worker = match[1];

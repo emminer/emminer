@@ -77,17 +77,19 @@ gpu((err, list) => {
       reportTimeout = null;
     }
 
-    const sharePciBusId = share.gpus[share.share.cuda].pciBusId;
     gpu((err1, list1) => {
       if (err1) {
         log.error(err1);
         return;
       }
 
+      if (share.gpus && share.gpus.length && share.gpus.length === list1.length) {
+        list1 = list1.map((e, index) => {
+          return Object.assign(e, share.gpus[index]);
+        });
+      }
+
       for (let gpu of list1) {
-        if (gpu.pciBusId === sharePciBusId) {
-          share.share.gpu = gpu.index;
-        }
         let gpuInMiner = share.gpus.filter(g => g.pciBusId === gpu.pciBusId)[0];
         gpu.hashrate = gpuInMiner.hashrate;
       }
