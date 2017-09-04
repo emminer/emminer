@@ -89,11 +89,6 @@ gpu((err, list) => {
         });
       }
 
-      for (let gpu of list1) {
-        let gpuInMiner = share.gpus.filter(g => g.pciBusId === gpu.pciBusId)[0];
-        gpu.hashrate = gpuInMiner.hashrate;
-      }
-
       //report
       let reportObj = {
         gpus: list1,
