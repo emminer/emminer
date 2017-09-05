@@ -57,6 +57,12 @@ gpu((err, list) => {
   }
 
   log.info(list.map(gpu => (gpu.index + ' ' + gpu.name)).join('\n'));
+  request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'start', payload: list }, (err) => {
+    if (err) {
+      return log.error('reporting started status failed.');
+    }
+    log.info('started status was reported.');
+  });
   startGPUReportor();
 
   const ethminer = new (require('./emitters/ethminer'))({
