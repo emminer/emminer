@@ -75,6 +75,7 @@ gpu((err, list) => {
     process.exit(1);
   });
   ethminer.on('exit', () => {
+    log.info('miner exit.');
     process.exit(1);
   });
   ethminer.on('share', (share) => {
@@ -114,6 +115,11 @@ gpu((err, list) => {
   process.on('exit', () => {
     log.info('exiting, kill the miner.');
     ethminer.kill();
+  });
+  process.on('SIGTERM', () => {//kill, pkill
+    log.info('Received SIGTERM.');
+    ethminer.kill();
+    process.exit(1);
   });
 });
 
