@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { spawnSync, spawn } = require('child_process');
+const {  spawn } = require('child_process');
 const stripAnsi = require('strip-ansi');
 const log = require('../logging');
 
