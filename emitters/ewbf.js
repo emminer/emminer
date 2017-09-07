@@ -2,6 +2,10 @@ const request = require('../request');
 const EventEmitter = require('events');
 
 class EWBFMonitor extends EventEmitter {
+  constructor(opts) {
+    super();
+    this.api_port = opts.params;
+  }
   start() {
 
   }
@@ -20,7 +24,7 @@ class EWBFMonitor extends EventEmitter {
   //   {'gpuid':3, 'cudaid':3, 'busid':'0000:07:00.0', 'name':'GeForce GTX 1080 Ti', 'gpu_status':2, 'solver':0, 'temperature':67, 'gpu_power_usage':169, 'speed_sps':682, 'accepted_shares':1071, 'rejected_shares':2, 'start_time':1504683930}]});
   // }
   _getStat(cb) {
-    request.get('http://127.0.0.1:42000/getstat', cb);
+    request.get(`http://127.0.0.1:${this.api_port}/getstat`, cb);
   }
 
   getStat(cb) {
