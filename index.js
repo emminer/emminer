@@ -175,11 +175,13 @@ function readGPUandReport() {
             gpus: list,
             hashrate: result.hashrate,
           };
+          log.info('report ewbf share, hashrate:', reportObj.hashrate);
           request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, () => {
             startGPUReportor();
           });
         } else {
           const payload = {action: 'regular', payload: list};
+          log.info('report gpu status, ewbf no share.');
           request.post(eventApiEndpoint, TOKEN, WORKER, payload, () => {
             startGPUReportor();
           });
