@@ -44,9 +44,19 @@ const argv = require('yargs')
     }
   })
   .argv;
+let minerName = argv.miner.substring(argv.miner.lastIndexOf('/')+1);
+if (minerName === 'miner' && argv.mod === 'ewbf') {
+  minerName = 'ewbf';
+}
+if (minerName !== 'ethminer' && minerName !== 'ewbf' && minerName !== 'ccminer') {
+  log.error(`unsupported miner ${argv.miner}.`);
+  process.exit(1);
+}
+
 const TOKEN = argv.token;
 const WORKER = argv.worker;
 let eventApiEndpoint = `http://${argv.host}/api/events`;
+let minerProcess;
 let reportTimeout;
 log.info(`worker: ${argv.worker}`);
 log.info('nvidia-smi:');
@@ -65,20 +75,25 @@ gpu((err, list) => {
   });
   startGPUReportor();
 
-  const ethminer = new (require('./emitters/ethminer'))({
+  const opts = {
     miner: argv.miner,
     params: argv.params,
-  });
+  };
+  if (minerName === 'ethminer') {
+    minerProcess =  new (require('./emitters/ethminer'))(opts);
+  } else if (minerName === 'ewbf') {
+    minerProcess = new (require('./emitters/ewbf'))(opts);
+  }
 
-  ethminer.on('error', () => {
-    ethminer.kill();
+  minerProcess.on('error', () => {
+    minerProcess.kill();
     process.exit(1);
   });
-  ethminer.on('exit', () => {
+  minerProcess.on('exit', () => {
     log.info('miner exit.');
     process.exit(1);
   });
-  ethminer.on('share', (share) => {
+  minerProcess.on('share', (share) => {
     if (reportTimeout) {
       clearTimeout(reportTimeout);
       reportTimeout = null;
@@ -111,14 +126,14 @@ gpu((err, list) => {
   // ethminer.on('authorized', log2console.bind(null, 'authorized'));
   // ethminer.on('new_job', log2console.bind(null, 'new_job'));
   // ethminer.on('work_timeout', log2console.bind(null, 'work_timeout'));
-  ethminer.start();
+  minerProcess.start();
   process.on('exit', () => {
     log.info('exiting, kill the miner.');
-    ethminer.kill();
+    minerProcess.kill();
   });
   process.on('SIGTERM', () => {//kill, pkill
     log.info('Received SIGTERM.');
-    ethminer.kill();
+    minerProcess.kill();
     process.exit(1);
   });
 });
@@ -140,10 +155,40 @@ function readGPUandReport() {
       return;
     }
 
-    log.info('reporting.......');
-    const payload = {action: 'regular', payload: list};
-    request.post(eventApiEndpoint, TOKEN, WORKER, payload, () => {
-      startGPUReportor();
-    });
+    if (minerName === 'ewbf') {//get miner stat
+      minerProcess.getStat((err, result) => {
+        if (err) {
+          return log.error(err);
+        }
+
+        if (result.newShare) {
+          if (result.gpus && result.gpus.length && result.gpus.length === list.length) {
+            list = list.map((e, index) => {
+              return Object.assign(e, result.gpus[index]);
+            });
+          }
+
+          //report
+          let reportObj = {
+            gpus: list,
+            hashrate: result.hashrate,
+          };
+          request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, () => {
+            startGPUReportor();
+          });
+        } else {
+          const payload = {action: 'regular', payload: list};
+          request.post(eventApiEndpoint, TOKEN, WORKER, payload, () => {
+            startGPUReportor();
+          });
+        }
+      });
+    } else {
+      log.info('regular reporting.......');
+      const payload = {action: 'regular', payload: list};
+      request.post(eventApiEndpoint, TOKEN, WORKER, payload, () => {
+        startGPUReportor();
+      });
+    }
   });
 }

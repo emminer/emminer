@@ -23,4 +23,18 @@ function post(url, token, worker, payload, cb) {
   });
 }
 
-module.exports = { post };
+function get(url, cb) {
+  request.get({url}, (err, response, body) => {
+    if (err) {
+      return cb && cb(err);
+    }
+
+    if (response.statusCode !== 200) {
+      return cb && cb(new Error(`http error, code: ${response.statusCode}`));
+    }
+
+    cb(null, body);
+  });
+}
+
+module.exports = { post, get };
