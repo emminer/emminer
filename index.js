@@ -152,13 +152,15 @@ function readGPUandReport() {
   gpu((err, list) => {
     if (err) {
       log.error(err);
+      process.exit(1);
       return;
     }
 
     if (minerName === 'ewbf') {//get miner stat
       minerProcess.getStat((err, result) => {
         if (err) {
-          return log.error(err);
+          log.error(err);
+          process.exit(1);
         }
 
         if (result.newShare) {

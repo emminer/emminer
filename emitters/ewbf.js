@@ -1,42 +1,13 @@
 const request = require('../request');
 const EventEmitter = require('events');
-const { spawn } = require('child_process');
-const log = require('../logging');
 
 class EWBFMonitor extends EventEmitter {
-  constructor(opts) {
-    super();
-    this.miner = opts.miner;
-    this.params = opts.params;
-    this.prevStat = null;
-  }
-
   start() {
-    log.info(`${this.miner} ${this.params}`);
-    const miner = spawn(this.miner, this.params.split(' '));
-    this.miner = miner;
-    miner.stdout.on('data', data => {
-      log.info(`${data}`.replace(/\n$/, ''));
-    });
-    miner.stderr.on('data', data => {
-      log.error(`${data}`.replace(/\n$/, ''));
-    });
-    miner.on('error', err => {
-      log.error('error occurred.');
-      log.error(err);
-      this.emit('error', err);
-    });
-    miner.on('exit', (code, signal) => {
-      log.info(`exit code: ${code}`);
-      log.info(`exit signal: ${signal}`);
-      this.emit('exit');
-    });
+
   }
 
   kill() {
-    if (this.miner) {
-      this.miner.kill();
-    }
+
   }
 
   // _getStat(cb) {
