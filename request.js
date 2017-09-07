@@ -24,7 +24,7 @@ function post(url, token, worker, payload, cb) {
 }
 
 function get(url, cb) {
-  request.get({url}, (err, response, body) => {
+  request.get({url, json: true}, (err, response, body) => {
     if (err) {
       return cb && cb(err);
     }
