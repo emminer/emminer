@@ -1,7 +1,7 @@
 const request = require('./request');
 const log = require('./logging');
 const gpu = require('./gpu');
-const regular_report_interval = 10;
+const regular_report_interval = 30;
 
 const argv = require('yargs')
   .options({
