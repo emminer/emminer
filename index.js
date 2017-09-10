@@ -1,7 +1,7 @@
 const request = require('./request');
 const log = require('./logging');
 const gpu = require('./gpu');
-const regular_report_interval = 30;
+const regular_report_interval = 60;
 
 const argv = require('yargs')
   .options({
@@ -94,32 +94,14 @@ gpu((err, list) => {
     process.exit(1);
   });
   minerProcess.on('share', (share) => {
-    if (reportTimeout) {
-      clearTimeout(reportTimeout);
-      reportTimeout = null;
-    }
-
-    gpu((err1, list1) => {
-      if (err1) {
-        log.error(err1);
-        return;
-      }
-
-      if (share.gpus && share.gpus.length && share.gpus.length === list1.length) {
-        list1 = list1.map((e, index) => {
-          return Object.assign(e, share.gpus[index]);
-        });
-      }
-
-      //report
-      let reportObj = {
-        gpus: list1,
-        share: share.share,
-        hashrate: share.hashrate,
-      };
-      request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, () => {
-        startGPUReportor();
-      });
+    //report
+    let reportObj = {
+      gpus: share.gpus,
+      share: share.share,
+      hashrate: share.hashrate,
+    };
+    request.post(eventApiEndpoint, TOKEN, WORKER, {action: 'share', payload: reportObj}, () => {
+      startGPUReportor();
     });
   });
   //ethminer.on('hashrate', log2console.bind(null, 'hashrate'));
